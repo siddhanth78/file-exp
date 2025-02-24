@@ -14,22 +14,25 @@ entry = FieldBox(50, 50, entry_color=(255,255,255), text_color=(255,255,255), ma
 suggestions = []
 curr_sug = 0
 
-cmds = ["!new-folder", "!delete-file", "!tag-add", "!tag-remove", "!rename", "!refresh", "!tag-remove-all"]
+cmds = ["!save-file", "!delete-file", "!tag-add", "!tag-remove", "!rename", "!refresh", "!tag-remove-all"]
 vars_ = []
 
-def get_dirs_and_files(root):
+def get_dirs_and_files(root, tag, tag_dict):
 	for en in os.scandir(root):
 		try:
 			if en.is_file(follow_symlinks=False):
+				tag_dict[tag].append(en.name)
 				yield en.name
 			elif en.is_dir(follow_symlinks=False):
+				tag = en.name
+				tag_dict[tag] = []
 				yield en.name
-				yield from get_dirs_and_files(en.path)
+				yield from get_dirs_and_files(en.path, tag, tac_dict)
 		except:
 			pass
 
 def initial_setup(root, cmds, vars_):
-	tagged = os.path.join(root, "My Tagged Files")
+	tagged = os.path.join(root, "Documents/My Tagged Files")
 	if os.path.exists(tagged) == False:
 		os.mkdir(tagged)
 		image_tagged = os.path.join(tagged, "#img")
@@ -150,6 +153,7 @@ while True:
 					curr_sug = 0
 				elif event.key == pygame.K_RETURN:
 					command = entry.get_text()
+					entry.set_text("")
 				elif event.key == pygame.K_LEFT:
 					entry.move_cursorx(-1)
 				elif event.key == pygame.K_RIGHT:
