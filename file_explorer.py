@@ -14,6 +14,9 @@ entry = FieldBox(50, 50, entry_color=(255,255,255), text_color=(255,255,255), ma
 suggestions = []
 curr_sug = 0
 
+cmds = ["!new-folder", "!delete-file", "!tag-add", "!tag-remove", "!rename", "!refresh", "!tag-remove-all"]
+vars_ = []
+
 def get_dirs_and_files(root):
 	for en in os.scandir(root):
 		try:
@@ -25,23 +28,27 @@ def get_dirs_and_files(root):
 		except:
 			pass
 
-def initial_setup(root):
+def initial_setup(root, cmds, vars_):
 	tagged = os.path.join(root, "My Tagged Files")
 	if os.path.exists(tagged) == False:
 		os.mkdir(tagged)
-		image_tagged = os.path.join(tagged, "Images")
+		image_tagged = os.path.join(tagged, "#img")
 		os.mkdir(image_tagged)
-		files_tagged = os.path.join(tagged, "Files")
+		files_tagged = os.path.join(tagged, "#file")
 		os.mkdir(files_tagged)
-		misc_tagged = os.path.join(tagged, "Miscellaneous")
+		misc_tagged = os.path.join(tagged, "#misc")
 		os.mkdir(misc_tagged)
+		no_tag = os.path.join(tagged, "No Tags")
+		os.mkdir(no_tag)
 	
-	paths = [path for path in get_dirs_and_files(tagged)]
+	tags = [path for path in get_dirs_and_files(tagged)]
+	tags.extend(cmds)
+	tags.extend(vars_)
 	curr_path = tagged
-	return paths, curr_path
+	return tags, curr_path
 
 print("Initializing...")
-paths, curr_path = initial_setup(os.path.expanduser("~"))
+tags, curr_path = initial_setup(os.path.expanduser("~"), cmds, vars_)
 
 class TrieNode:
 	def __init__(self):
@@ -110,11 +117,12 @@ class Trie:
 
 		return results
 
-path_tree = Trie()
+tab_tree = Trie()
 
-for p in paths:
-	if p:
-		path_tree.insert(p)
+if tags:
+	for t in tags:
+		if t:
+			tab_tree.insert(t)
 
 font_ = pygame.font.SysFont("Courier", 20)
 
@@ -136,7 +144,7 @@ while True:
 			if entry.is_active() == True and entry.is_hidden() == False:
 				if event.key == pygame.K_BACKSPACE:
 					entry.remove_behind_cursor()
-					suggestions = path_tree.find_prefix(entry.get_text())
+					suggestions = tab_tree.find_prefix(entry.get_text())
 					suggestions.sort()
 					suggestions = suggestions[:10]
 					curr_sug = 0
@@ -154,7 +162,7 @@ while True:
 						curr_sug = 0
 				elif event.unicode:
 					entry.append_at_cursor(event.unicode)
-					suggestions = path_tree.find_prefix(entry.get_text())
+					suggestions = tab_tree.find_prefix(entry.get_text())
 					suggestions.sort()
 					suggestions = suggestions[:10]
 					curr_sug = 0
