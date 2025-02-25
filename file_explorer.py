@@ -20,18 +20,19 @@ cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!refresh", "!tag-
 vars_ = []
 
 def get_dirs_and_files(root, tag, tag_dict):
-	for en in os.scandir(root):
-		try:
-			if en.is_file(follow_symlinks=False):
-				tag_dict[tag].append(en.name)
-				yield en.name
-			elif en.is_dir(follow_symlinks=False):
-				tag = en.name
-				tag_dict[tag] = []
-				yield en.name
-				yield from get_dirs_and_files(en.path, tag, tag_dict)
-		except:
-			pass
+    for en in os.scandir(root):
+        try:
+            if en.is_file(follow_symlinks=False):
+                if en.name.lower() != ".ds_store":
+                    tag_dict[tag].append(en.name)
+                    yield en.name
+            elif en.is_dir(follow_symlinks=False):
+                tag = en.name
+                tag_dict[tag] = []
+                yield en.name
+                yield from get_dirs_and_files(en.path, tag, tag_dict)
+        except:
+            pass
 
 def initial_setup(root, cmds, vars_):
 	tagged = os.path.join(root, "Documents/My Tagged Files")
@@ -43,7 +44,7 @@ def initial_setup(root, cmds, vars_):
 		os.mkdir(files_tagged)
 		misc_tagged = os.path.join(tagged, "#misc")
 		os.mkdir(misc_tagged)
-		no_tag = os.path.join(tagged, "No Tags")
+		no_tag = os.path.join(tagged, "#untagged")
 		os.mkdir(no_tag)
 	
 	tags = [path for path in get_dirs_and_files(tagged, None, tag_dict)]
@@ -55,7 +56,7 @@ def initial_setup(root, cmds, vars_):
 print("Initializing...")
 tags, curr_path = initial_setup(os.path.expanduser("~"), cmds, vars_)
 
-default_path = os.path.join(curr_path, "No Tags")
+default_path = os.path.join(curr_path, "#untagged")
 
 class TrieNode:
 	def __init__(self):
@@ -136,7 +137,7 @@ font_ = pygame.font.SysFont("Courier", 10)
 def parse_command(command, tag_dict, tags, tab_tree):
     root_dir = os.path.expanduser("~")
     command_list = command.strip().split(">")
-    com = command_list[0]
+    com = command_list[0].strip()
     if com == "!delete-file":
         if "#" in command_list[1]:
             return "Invalid file name", tags, tag_dict, tab_tree
@@ -172,8 +173,14 @@ def parse_command(command, tag_dict, tags, tab_tree):
 
     else:
         if "&&" not in com and "#" not in com:
-            os.system(f"open {com.strip()}")
-            return f"Opened {com.strip()}", tags, tag_dict, tab_tree
+            try:
+                for t in tag_dict:
+                    if com in tag_dict[t]:
+                        os.system(f"cd '{os.path.join(os.path.expanduser('~'), 'Documents/My Tagged Files')}' && open '{os.path.join(t, com.strip())}'")
+                        return f"Opened {com.strip()}", tags, tag_dict, tab_tree
+                return "Couldn't open file", tags, tag_dict, tab_tree
+            except:
+                return "Error opening file", tags, tag_dict, tab_tree
 
         list_of_tags_or_file = com.strip().split("&&")
         all_files = set()
@@ -203,17 +210,19 @@ while True:
                     entry.set_inactive()
         elif event.type == pygame.DROPFILE:
             file_path = event.file
+            file_dir = os.path.dirname(file_path)
             file_name = os.path.basename(file_path)
             if "#" in file_name or "&&" in file_name:
                 feed_back = "Invalid file name"
             else:
                 if os.path.exists(os.path.join(default_path, file_name)) == False:
-                    file_name = file_name.replace(" ", "_")
+                    new_file_name = file_name.replace(" ", "_")
                     shutil.move(file_path, default_path)
-                    feed_back = f"{file_name} added to No Tags"
-                    tag_dict["No Tags"].append(file_name)
-                    tags.append(file_name)
-                    tab_tree.insert(file_name)
+                    os.rename(os.path.join(default_path, file_name), os.path.join(default_path, new_file_name))
+                    feed_back = f"{new_file_name} added to #untagged"
+                    tag_dict["#untagged"].append(new_file_name)
+                    tags.append(new_file_name)
+                    tab_tree.insert(new_file_name)
         elif event.type == pygame.KEYDOWN:
             if entry.is_active() == True and entry.is_hidden() == False:
                 if event.key == pygame.K_BACKSPACE:
