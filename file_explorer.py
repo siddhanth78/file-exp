@@ -229,20 +229,25 @@ while True:
                     tab_tree.insert(new_file_name)
         elif event.type == pygame.KEYDOWN:
             if entry.is_active() == True and entry.is_hidden() == False:
-                if event.key == pygame.K_BACKSPACE:
+                if (event.key == pygame.K_o) and (event.mod & pygame.KMOD_CTRL):
+                    entry.set_inactive()
+                elif event.key == pygame.K_BACKSPACE:
                     entry.remove_behind_cursor()
                     if token:
                         token = token[:-1]
-                    else:
-                        token = tokens[-1] if tokens else ""
-                        tokens = tokens[:-1]
+                        if token == "":
+                            token = tokens[-1] if tokens else ""
+                            tokens = tokens[:-1]
                     suggestions = tab_tree.find_prefix(token)
                     suggestions.sort()
                     suggestions = suggestions[:10]
                     curr_sug = 0
                 elif event.key == pygame.K_RETURN:
                     command = entry.get_text()
-                    feed_back, tags, tag_dict, tab_tree = parse_command(command, tag_dict, tags, tab_tree, curr_path)
+                    try:
+                        feed_back, tags, tag_dict, tab_tree = parse_command(command, tag_dict, tags, tab_tree, curr_path)
+                    except:
+                        feed_back = ["Error"]
                     entry.set_text("")
                     entry.set_inactive()
                     token = ""
@@ -255,7 +260,7 @@ while True:
                 elif event.key == pygame.K_TAB:
                     if suggestions:
                         token = suggestions[curr_sug]
-                        entry.set_text("".join(tokens[:-1]) + token)
+                        entry.set_text("".join(tokens) + token)
                         curr_sug = (curr_sug+1)%len(suggestions)
                     else:
                         curr_sug = 0
@@ -264,7 +269,6 @@ while True:
                     if event.unicode == ">" or event.unicode == " " or event.unicode == "&":
                         tokens.append(token)
                         tokens.append(event.unicode)
-                        tokens.append("")
                         suggestions = []
                         token = ""
                     else:
@@ -281,6 +285,8 @@ while True:
                 if ve < len(feed_back):
                     vs += 1
                     ve += 1
+            elif (event.key == pygame.K_o) and (event.mod & pygame.KMOD_CTRL):
+                entry.set_active()
 
     pygame.display.update()
     clock.tick(30)
