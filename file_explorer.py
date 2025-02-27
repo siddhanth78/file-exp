@@ -7,11 +7,11 @@ import json
 
 pygame.init()
 
-screen = pygame.display.set_mode((1000, 750))
+screen = pygame.display.set_mode((1400, 750))
 clock = pygame.time.Clock()
 pygame.key.set_repeat(250, 25)
 
-entry = FieldBox(50, 50, entry_color=(255,255,255), text_color=(255,255,255), max_chars=75)
+entry = FieldBox(10, 50, entry_color=(255,255,255), text_color=(255,255,255), max_chars=115)
 
 suggestions = []
 curr_sug = 0
@@ -199,8 +199,9 @@ ve = 15
 while True:
     screen.fill((0,0,0))
     entry.render(screen)
-    feed_surf = font_.render("\n".join(feed_back[vs:ve]), True, (255,255,255))
-    screen.blit(feed_surf, (50, 80))
+    for f in range(len(feed_back[vs:ve])):
+        feed_surf = font_.render(feed_back[vs:ve][f], True, (255,255,255))
+        screen.blit(feed_surf, (10, 80+f*20))
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             with open(os.path.join(curr_path, "all_files.json"), "w") as file:
@@ -238,6 +239,12 @@ while True:
                         if token == "":
                             token = tokens[-1] if tokens else ""
                             tokens = tokens[:-1]
+                    else:
+                        token = tokens[-1][:-1] if tokens else ""
+                        tokens = tokens[:-1]
+                        if token == "":
+                            tokens = tokens[:-1]
+                            token = tokens[-1] if tokens else ""
                     suggestions = tab_tree.find_prefix(token)
                     suggestions.sort()
                     suggestions = suggestions[:10]
@@ -267,7 +274,8 @@ while True:
                 elif event.unicode:
                     entry.append_at_cursor(event.unicode)
                     if event.unicode == ">" or event.unicode == " " or event.unicode == "&":
-                        tokens.append(token)
+                        if token:
+                            tokens.append(token)
                         tokens.append(event.unicode)
                         suggestions = []
                         token = ""
