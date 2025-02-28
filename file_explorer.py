@@ -22,16 +22,16 @@ vars_ = []
 
 def get_files(root):
     for en in os.scandir(root):
-        if en.name.lower() not in [".ds_store", "all_files.json"] and en.is_file(follow_symlinks=False):
+        if en.name.lower() not in [".ds_store", "_#all_#files.json"] and en.is_file(follow_symlinks=False):
             yield en.name
 
 def initial_setup(root, cmds, vars_):
     tagged = os.path.join(root, "Documents/My Tagged Files")
     if os.path.exists(tagged) == False:
         os.mkdir(tagged)
-        with open(os.path.join(tagged, 'all_files.json'), 'w') as file:
+        with open(os.path.join(tagged, '_#all_#files.json'), 'w') as file:
             json.dump({"#untagged": [], "#img": [], "#file": [], "#misc": []}, file, indent=4)
-    with open(os.path.join(tagged, "all_files.json"), "r") as file:
+    with open(os.path.join(tagged, "_#all_#files.json"), "r") as file:
         tag_dict = json.load(file)
     tags = [path for path in get_files(tagged)]
     tags.extend([t for t in tag_dict])
@@ -156,10 +156,27 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
             return ["Error renaming file"], tags, tag_dict, tab_tree, (255,0,0)
-    
+
+    elif com == "!tag-remove":
+        command_list[1], command_list[2] = command_list[1].strip(), command_list[2].strip()
+        if "#" in command_list[1] or command_list[1] not in tags:
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
+        list_of_tags = command_list[2].split(" & ")
+
+        for l in list_of_tags:
+            if l[0] == "#" and l != "#untagged":
+                l = l.strip()
+                if l in tag_dict:
+                    tag_dict[l].remove(command_list[1])
+                    if tag_dict[l] == []:
+                        del tag_dict[l]
+                        tab_tree.remove(l)
+                        tags.remove(l)
+        return ["Tags removed"], tags, tag_dict, tab_tree, (0,255,0)
+
     elif com == "!tag-add":
         command_list[1], command_list[2] = command_list[1].strip(), command_list[2].strip()
-        if "#" in command_list[1]:
+        if "#" in command_list[1] or command_list[1] not in tags:
             return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
         list_of_tags = command_list[2].split(" & ")
 
@@ -170,7 +187,25 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
                     tag_dict[l] = []
                     tab_tree.insert(l)
                 tag_dict[l].append(command_list[1])
+        tag_dict["#untagged"].remove(command_list[1])
         return ["Tags added"], tags, tag_dict, tab_tree, (0,255,0)
+
+    elif com == "!tag-show":
+        command_list[1] = command_list[1].strip()
+        if "#" in command_list[1] or command_list[1] not in tags:
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
+        all_tags = []
+        for t in tag_dict:
+            if command_list[1] in tag_dict[t]:
+                all_tags.append(t)
+        return all_tags, tags, tag_dict, tab_tree, (255,255,0)
+
+    elif com == "se":
+        try:
+            os.system(f"open https://google.com/search?q={command_list[1]}")
+            return ["Google"], tags, tag_dict, tab_tree, (0,255,0)
+        except:
+            return ["Error"], tags, tag_dict, tab_tree, (255,0,0)
 
     else:
         if "&" not in com and "#" not in com and ">" not in com:
@@ -194,9 +229,9 @@ feed_back = [""]
 tokens = [] 
 token = ""
 vs = 0
-ve = 15
+ve = 20
 curr_selection = 0
-stat_color = (0,0,255)
+stat_color = (0,0,0)
 
 while True:
     screen.fill((0,0,0))
@@ -205,10 +240,10 @@ while True:
         feed_surf = font_.render(feed_back[vs:ve][f], True, (255,255,255))
         screen.blit(feed_surf, (10, 80+f*30))
     if entry.is_active() == False:
-        pygame.draw.rect(screen, stat_color, (5, 75+30*curr_selection, 1392, 30), 1, 3)
+        pygame.draw.rect(screen, stat_color, (5, 75+30*curr_selection, 1392, 30), 2, 3)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            with open(os.path.join(curr_path, "all_files.json"), "w") as file:
+            with open(os.path.join(curr_path, "_#all_#files.json"), "w") as file:
                 json.dump(tag_dict, file, indent=4)
             sys.exit(0)
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -261,15 +296,17 @@ while True:
                         except:
                             feed_back = ["Error"]
                             stat_color = (255,0,0)
-                    entry.set_text("")
+                    else:
+                        feed_back = [""]
+                        stat_color = (0,0,0)
+                    if feed_back == []:
+                        stat_color = (0,0,0)
                     entry.set_inactive()
+                elif (event.key == pygame.K_d) and (event.mod & pygame.KMOD_CTRL):
+                    entry.set_text("")
                     token = ""
                     tokens = []
                     curr_selection = 0
-                elif event.key == pygame.K_LEFT:
-                    entry.move_cursorx(-1)
-                elif event.key == pygame.K_RIGHT:
-                    entry.move_cursorx(1)
                 elif event.key == pygame.K_TAB:
                     if suggestions:
                         token = suggestions[curr_sug]
@@ -293,7 +330,8 @@ while True:
                     curr_sug = 0
             elif event.key == pygame.K_RETURN:
                 if stat_color == (255,255,0):
-                    os.system(f"cd '{curr_path}' && open '{feed_back[curr_selection].strip()}'")
+                    if feed_back[curr_selection][0] != "#":
+                        os.system(f"cd '{curr_path}' && open '{feed_back[curr_selection].strip()}'")
             elif event.key == pygame.K_UP:
                 if curr_selection > 0:
                     if vs > 0:
@@ -302,14 +340,14 @@ while True:
                     curr_selection -= 1
             elif event.key == pygame.K_DOWN:
                 if curr_selection < len(feed_back)-1:
-                    if curr_selection > 15:
+                    if curr_selection > 20:
                         vs += 1
                         ve += 1
                     curr_selection += 1
             elif (event.key == pygame.K_o) and (event.mod & pygame.KMOD_CTRL):
                 entry.set_active()
             elif event.key == pygame.K_ESCAPE:
-                with open(os.path.join(curr_path, "all_files.json"), "w") as file:
+                with open(os.path.join(curr_path, "_#all_#files.json"), "w") as file:
                     json.dump(tag_dict, file, indent=4)
                 sys.exit(0)
 
