@@ -17,7 +17,7 @@ suggestions = []
 curr_sug = 0
 tag_dict = {}
 
-cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!refresh", "!tag-remove-all", "!tag-show"]
+cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!tag-remove-all", "!tag-show"]
 vars_ = []
 
 def get_files(root):
@@ -34,6 +34,8 @@ def initial_setup(root, cmds, vars_):
     with open(os.path.join(tagged, "_#all_#files.json"), "r") as file:
         tag_dict = json.load(file)
     tags = [path for path in get_files(tagged)]
+    tgc = tags.copy()
+    tag_dict["#all"] = tgc
     tags.extend([t for t in tag_dict])
     tags.extend(cmds)
     tags.extend(vars_)
@@ -156,6 +158,24 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
             return ["Error renaming file"], tags, tag_dict, tab_tree, (255,0,0)
+
+    elif com == "!tag-remove-all":
+        command_list[1] = command_list[1].strip()
+        if "#" in command_list[1] or command_list[1] not in tags:
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
+        
+        rem_tag = []
+        for l in tag_dict:
+            if l != "#all":
+                l = l.strip()
+                tag_dict[l].remove(command_list[1])
+                if tag_dict[l] == []:
+                    rem_tag.append(l)
+                    tab_tree.remove(l)
+                    tags.remove(l)
+        for r_ in rem_tag:
+            del tag_dict[r_]
+        return ["Tags removed"], tags, tag_dict, tab_tree, (0,255,0)
 
     elif com == "!tag-remove":
         command_list[1], command_list[2] = command_list[1].strip(), command_list[2].strip()
