@@ -125,7 +125,7 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
     if com == "!delete-file":
         command_list[1] = command_list[1].strip()
         if "#" in command_list[1]:
-            return ["Invalid file name"], tags, tag_dict, tab_tree
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
         try:
             for t in tag_dict:
                 if command_list[1] in tag_dict[t]:
@@ -133,16 +133,16 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             os.remove(os.path.join(root_dir, command_list[1]))
             tags.remove(command_list[1])
             tab_tree.remove(command_list[1])
-            return [f"Removed {command_list[1]}"], tags, tag_dict, tab_tree
+            return [f"Removed {command_list[1]}"], tags, tag_dict, tab_tree, (0,255,0)
         except OSError:
-            return ["File not found"], tags, tag_dict, tab_tree
+            return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
-            return ["Error deleting file"], tags, tag_dict, tab_tree 
+            return ["Error deleting file"], tags, tag_dict, tab_tree, (255,0,0)
 
     elif com == "!rename":
         command_list[1], command_list[2] = command_list[1].strip(), command_list[2].strip()
         if "#" in command_list[1] or "&" in command_list[1] or "#" in command_list[2] or "&" in command_list[2] or ">" in command_list[1] or ">" in command_list[2]:
-            return ["Invalid file name"], tags, tag_dict, tab_tree
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
         try:
             for t in tag_dict:
                 if command_list[1] in tag_dict[t]:
@@ -151,16 +151,16 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             tags[tags.index(command_list[1])] = command_list[2]
             tab_tree.remove(command_list[1])
             tab_tree.insert(command_list[2])
-            return [f"Renamed {command_list[1]} to {command_list[2]}"], tags, tag_dict, tab_tree
+            return [f"Renamed {command_list[1]} to {command_list[2]}"], tags, tag_dict, tab_tree, (0,255,0)
         except OSError:
-            return ["File not found"], tags, tag_dict, tab_tree
+            return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
-            return ["Error renaming file"], tags, tag_dict, tab_tree
+            return ["Error renaming file"], tags, tag_dict, tab_tree, (255,0,0)
     
     elif com == "!tag-add":
         command_list[1], command_list[2] = command_list[1].strip(), command_list[2].strip()
         if "#" in command_list[1]:
-            return ["Invalid file name"], tags, tag_dict, tab_tree
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
         list_of_tags = command_list[2].split(" & ")
 
         for l in list_of_tags:
@@ -170,7 +170,7 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
                     tag_dict[l] = []
                     tab_tree.insert(l)
                 tag_dict[l].append(command_list[1])
-        return ["Tags added"], tags, tag_dict, tab_tree
+        return ["Tags added"], tags, tag_dict, tab_tree, (0,255,0)
 
     else:
         if "&" not in com and "#" not in com and ">" not in com:
@@ -178,30 +178,34 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
                 for t in tag_dict:
                     if com in tag_dict[t]:
                         os.system(f"cd '{root_dir}' && open '{com.strip()}'")
-                        return [f"Opened {com.strip()}"], tags, tag_dict, tab_tree
-                return ["Couldn't open file"], tags, tag_dict, tab_tree
+                        return [f"Opened {com.strip()}"], tags, tag_dict, tab_tree, (0,255,0)
+                return ["Couldn't open file"], tags, tag_dict, tab_tree, (255,0,0)
             except:
-                return ["Error opening file"], tags, tag_dict, tab_tree
+                return ["Error opening file"], tags, tag_dict, tab_tree, (255,0,0)
 
         list_of_tags = com.strip().split(" & ")
         all_files = set(tag_dict[list_of_tags[0]])
         for ltf in list_of_tags:
             ltf = ltf.strip()
             all_files = all_files & set(tag_dict[ltf])
-        return list(all_files), tags, tag_dict, tab_tree
+        return list(all_files), tags, tag_dict, tab_tree, (255,255,0)
 
 feed_back = [""]
 tokens = [] 
 token = ""
 vs = 0
 ve = 15
+curr_selection = 0
+stat_color = (0,0,255)
 
 while True:
     screen.fill((0,0,0))
     entry.render(screen)
     for f in range(len(feed_back[vs:ve])):
         feed_surf = font_.render(feed_back[vs:ve][f], True, (255,255,255))
-        screen.blit(feed_surf, (10, 80+f*20))
+        screen.blit(feed_surf, (10, 80+f*30))
+    if entry.is_active() == False:
+        pygame.draw.rect(screen, stat_color, (5, 75+30*curr_selection, 1392, 30), 1, 3)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             with open(os.path.join(curr_path, "all_files.json"), "w") as file:
@@ -251,19 +255,21 @@ while True:
                     curr_sug = 0
                 elif event.key == pygame.K_RETURN:
                     command = entry.get_text()
-                    try:
-                        feed_back, tags, tag_dict, tab_tree = parse_command(command, tag_dict, tags, tab_tree, curr_path)
-                    except:
-                        feed_back = ["Error"]
+                    if command:
+                        try:
+                            feed_back, tags, tag_dict, tab_tree, stat_color = parse_command(command, tag_dict, tags, tab_tree, curr_path)
+                        except:
+                            feed_back = ["Error"]
+                            stat_color = (255,0,0)
                     entry.set_text("")
                     entry.set_inactive()
                     token = ""
                     tokens = []
+                    curr_selection = 0
                 elif event.key == pygame.K_LEFT:
                     entry.move_cursorx(-1)
                 elif event.key == pygame.K_RIGHT:
                     entry.move_cursorx(1)
-                
                 elif event.key == pygame.K_TAB:
                     if suggestions:
                         token = suggestions[curr_sug]
@@ -285,16 +291,27 @@ while True:
                         suggestions.sort()
                         suggestions = suggestions[:10]
                     curr_sug = 0
+            elif event.key == pygame.K_RETURN:
+                if stat_color == (255,255,0):
+                    os.system(f"cd '{curr_path}' && open '{feed_back[curr_selection].strip()}'")
             elif event.key == pygame.K_UP:
-                if vs > 0:
-                    vs -= 1
-                    ve -= 1
+                if curr_selection > 0:
+                    if vs > 0:
+                        vs -= 1
+                        ve -= 1
+                    curr_selection -= 1
             elif event.key == pygame.K_DOWN:
-                if ve < len(feed_back):
-                    vs += 1
-                    ve += 1
+                if curr_selection < len(feed_back)-1:
+                    if curr_selection > 15:
+                        vs += 1
+                        ve += 1
+                    curr_selection += 1
             elif (event.key == pygame.K_o) and (event.mod & pygame.KMOD_CTRL):
                 entry.set_active()
+            elif event.key == pygame.K_ESCAPE:
+                with open(os.path.join(curr_path, "all_files.json"), "w") as file:
+                    json.dump(tag_dict, file, indent=4)
+                sys.exit(0)
 
     pygame.display.update()
     clock.tick(30)
