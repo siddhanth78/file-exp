@@ -30,7 +30,7 @@ def initial_setup(root, cmds, vars_):
     if os.path.exists(tagged) == False:
         os.mkdir(tagged)
         with open(os.path.join(tagged, '_#all_#files.json'), 'w') as file:
-            json.dump({"#untagged": [], "#img": [], "#file": [], "#misc": []}, file, indent=4)
+            json.dump({"#all": [], "#img": [], "#file": [], "#misc": []}, file, indent=4)
     with open(os.path.join(tagged, "_#all_#files.json"), "r") as file:
         tag_dict = json.load(file)
     tags = [path for path in get_files(tagged)]
@@ -164,7 +164,7 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
         list_of_tags = command_list[2].split(" & ")
 
         for l in list_of_tags:
-            if l[0] == "#" and l != "#untagged":
+            if l[0] == "#" and l != "#all":
                 l = l.strip()
                 if l in tag_dict:
                     tag_dict[l].remove(command_list[1])
@@ -181,14 +181,13 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
         list_of_tags = command_list[2].split(" & ")
 
         for l in list_of_tags:
-            if l[0] == "#" and l != "#untagged":
+            if l[0] == "#" and l != "#all":
                 l = l.strip()
                 if l not in tag_dict:
                     tag_dict[l] = []
                     tab_tree.insert(l)
                     tags.append(l)
                 tag_dict[l].append(command_list[1])
-        tag_dict["#untagged"].remove(command_list[1])
         return ["Tags added"], tags, tag_dict, tab_tree, (0,255,0)
 
     elif com == "!tag-show":
@@ -264,8 +263,8 @@ while True:
                     new_file_name = file_name.replace(" ", "_")
                     shutil.move(file_path, curr_path)
                     os.rename(os.path.join(curr_path, file_name), os.path.join(curr_path, new_file_name))
-                    feed_back = [f"{new_file_name} added to #untagged"]
-                    tag_dict["#untagged"].append(new_file_name)
+                    feed_back = [f"{new_file_name} added to #all"]
+                    tag_dict["#all"].append(new_file_name)
                     tags.append(new_file_name)
                     tab_tree.insert(new_file_name)
         elif event.type == pygame.KEYDOWN:
