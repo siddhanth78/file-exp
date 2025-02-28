@@ -186,6 +186,7 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
                 if l not in tag_dict:
                     tag_dict[l] = []
                     tab_tree.insert(l)
+                    tags.append(l)
                 tag_dict[l].append(command_list[1])
         tag_dict["#untagged"].remove(command_list[1])
         return ["Tags added"], tags, tag_dict, tab_tree, (0,255,0)
