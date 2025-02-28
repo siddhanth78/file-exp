@@ -295,18 +295,14 @@ while True:
                     entry.remove_behind_cursor()
                     if token:
                         token = token[:-1]
-                        if token == "":
-                            token = tokens[-1] if tokens else ""
-                            tokens = tokens[:-1]
                     else:
-                        token = tokens[-1][:-1] if tokens else ""
-                        tokens = tokens[:-1]
-                        if token == "":
-                            tokens = tokens[:-1]
-                            token = tokens[-1] if tokens else ""
+                        if tokens:
+                            tokens.pop(-1)
+                        token = tokens[-1] if tokens else ""
+                        tokens = tokens[:-1] if len(tokens) > 1 else []
+                        entry.set_text("".join(tokens) + token if tokens else token)
                     suggestions = tab_tree.find_prefix(token)
                     suggestions.sort()
-                    suggestions = suggestions[:10]
                     curr_sug = 0
                 elif event.key == pygame.K_RETURN:
                     command = entry.get_text()
@@ -330,23 +326,23 @@ while True:
                 elif event.key == pygame.K_TAB:
                     if suggestions:
                         token = suggestions[curr_sug]
-                        entry.set_text("".join(tokens) + token)
+                        entry.set_text("".join(tokens) + token if len(tokens) > 1 else token)
                         curr_sug = (curr_sug+1)%len(suggestions)
                     else:
                         curr_sug = 0
                 elif event.unicode:
                     entry.append_at_cursor(event.unicode)
-                    if event.unicode == ">" or event.unicode == " " or event.unicode == "&":
+                    if event.unicode == " " and token:
                         if token:
                             tokens.append(token)
-                        tokens.append(event.unicode)
+                        tokens.append(" & " if token[0] == "#" else " > ")
+                        entry.set_text("".join(tokens))
                         suggestions = []
                         token = ""
                     else:
                         token += event.unicode
                         suggestions = tab_tree.find_prefix(token)
                         suggestions.sort()
-                        suggestions = suggestions[:10]
                     curr_sug = 0
             elif event.key == pygame.K_RETURN:
                 if stat_color == (255,255,0):
