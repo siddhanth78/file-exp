@@ -123,7 +123,6 @@ font_ = pygame.font.SysFont("Courier", 20)
 
 def parse_command(command, tag_dict, tags, tab_tree, root_dir):
     command_list = command.strip().split(" > ")
-    print(command_list)
     com = command_list[0].strip()
     if com == "!delete-file":
         command_list[1] = command_list[1].strip()
