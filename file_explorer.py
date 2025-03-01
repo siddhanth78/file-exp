@@ -17,7 +17,7 @@ suggestions = []
 curr_sug = 0
 tag_dict = {}
 
-cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!tag-remove-all", "!tag-show", "!open"]
+cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!tag-remove-all", "!tag-show"]
 vars_ = []
 
 def get_files(root):
