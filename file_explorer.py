@@ -4,6 +4,7 @@ from pygame.locals import *
 import os
 import shutil
 import json
+import textfile
 
 pygame.init()
 
@@ -17,7 +18,7 @@ suggestions = []
 curr_sug = 0
 tag_dict = {}
 
-cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!tag-remove-all", "!tag-show"]
+cmds = ["!delete-file", "!tag-add", "!tag-remove", "!rename", "!tag-remove-all", "!tag-show", "!open"]
 vars_ = []
 
 def get_files(root):
@@ -158,6 +159,15 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
             return ["Error renaming file"], tags, tag_dict, tab_tree, (255,0,0)
+
+    elif com == "!open":
+        command_list[1] = command_list[1].strip()
+        if "#" in command_list[1] or command_list[1] not in tags:
+            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
+        
+        if command_list[1].split(".")[-1] == ".fnote":
+            f_ = textfile.run_text_editor(initial_text=open(command_list[1], "r").read())
+
 
     elif com == "!tag-remove-all":
         command_list[1] = command_list[1].strip()
