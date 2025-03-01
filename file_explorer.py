@@ -4,7 +4,6 @@ from pygame.locals import *
 import os
 import shutil
 import json
-import textfile
 
 pygame.init()
 
@@ -124,6 +123,7 @@ font_ = pygame.font.SysFont("Courier", 20)
 
 def parse_command(command, tag_dict, tags, tab_tree, root_dir):
     command_list = command.strip().split(" > ")
+    print(command_list)
     com = command_list[0].strip()
     if com == "!delete-file":
         command_list[1] = command_list[1].strip()
@@ -159,15 +159,6 @@ def parse_command(command, tag_dict, tags, tab_tree, root_dir):
             return ["File not found"], tags, tag_dict, tab_tree, (255,0,0)
         except:
             return ["Error renaming file"], tags, tag_dict, tab_tree, (255,0,0)
-
-    elif com == "!open":
-        command_list[1] = command_list[1].strip()
-        if "#" in command_list[1] or command_list[1] not in tags:
-            return ["Invalid file name"], tags, tag_dict, tab_tree, (255,0,0)
-        
-        if command_list[1].split(".")[-1] == ".fnote":
-            f_ = textfile.run_text_editor(initial_text=open(command_list[1], "r").read())
-
 
     elif com == "!tag-remove-all":
         command_list[1] = command_list[1].strip()
@@ -317,11 +308,7 @@ while True:
                 elif event.key == pygame.K_RETURN:
                     command = entry.get_text()
                     if command:
-                        try:
-                            feed_back, tags, tag_dict, tab_tree, stat_color = parse_command(command, tag_dict, tags, tab_tree, curr_path)
-                        except:
-                            feed_back = ["Error"]
-                            stat_color = (255,0,0)
+                        feed_back, tags, tag_dict, tab_tree, stat_color = parse_command(command, tag_dict, tags, tab_tree, curr_path)
                     else:
                         feed_back = [""]
                         stat_color = (0,0,0)
