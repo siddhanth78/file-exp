@@ -8,6 +8,7 @@ import json
 pygame.init()
 
 screen = pygame.display.set_mode((1400, 750))
+pygame.display.set_caption("TAG_FS")
 clock = pygame.time.Clock()
 pygame.key.set_repeat(250, 25)
 font_ = pygame.font.SysFont("Courier", 20)
